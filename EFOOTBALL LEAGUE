@@ -1,0 +1,194 @@
+<!DOCTYPE html><html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Football League</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f0f2f5;
+      margin: 0;
+      padding: 20px;
+    }
+    h1, h2 {
+      text-align: center;
+    }
+    .container {
+      max-width: 1000px;
+      margin: auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    ul {
+      list-style: none;
+      padding: 0;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      gap: 10px;
+    }
+    li {
+      background: #e7f3ff;
+      padding: 10px;
+      text-align: center;
+      border-radius: 5px;
+      font-weight: bold;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      padding: 10px;
+      text-align: center;
+      border: 1px solid #ccc;
+    }
+    th {
+      background: #007bff;
+      color: white;
+    }
+    input.score {
+      width: 40px;
+      padding: 5px;
+      text-align: center;
+    }
+    button {
+      display: block;
+      margin: 20px auto;
+      padding: 10px 20px;
+      background-color: #007bff;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>My Football League</h1><h2>Teams</h2>
+<ul id="teams"></ul>
+
+<h2>Fixtures & Scores</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Match Day</th>
+      <th>Home</th>
+      <th>Score</th>
+      <th>Away</th>
+    </tr>
+  </thead>
+  <tbody id="fixtures"></tbody>
+</table>
+
+<button onclick="updateStandings()">Update Standings</button>
+
+<h2>League Table</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Team</th><th>P</th><th>W</th><th>D</th><th>L</th>
+      <th>GF</th><th>GA</th><th>GD</th><th>PTS</th>
+    </tr>
+  </thead>
+  <tbody id="standings"></tbody>
+</table>
+
+  </div>  <script>
+    const teams = [
+      "Team A", "Team B", "Team C", "Team D", "Team E", "Team F",
+      "Team G",
+    ];
+
+    const teamList = document.getElementById("teams");
+    teams.forEach(team => {
+      const li = document.createElement("li");
+      li.textContent = team;
+      teamList.appendChild(li);
+    });
+
+    const fixtures = [];
+    for (let i = 0; i < teams.length; i++) {
+      for (let j = i + 1; j < teams.length; j++) {
+        fixtures.push({ day: fixtures.length + 1, home: teams[i], away: teams[j] });
+      }
+    }
+
+    const fixtureTable = document.getElementById("fixtures");
+    fixtures.forEach((match, index) => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>Day ${match.day}</td>
+        <td>${match.home}</td>
+        <td>
+          <input type="number" class="score" data-home="${match.home}" data-away="${match.away}" placeholder="0"> - 
+          <input type="number" class="score" data-home="${match.away}" data-away="${match.home}" placeholder="0">
+        </td>
+        <td>${match.away}</td>
+      `;
+      fixtureTable.appendChild(tr);
+    });
+
+    function updateStandings() {
+      const table = {};
+      teams.forEach(team => {
+        table[team] = { team, P: 0, W: 0, D: 0, L: 0, GF: 0, GA: 0, GD: 0, PTS: 0 };
+      });
+
+      const rows = fixtureTable.querySelectorAll("tr");
+      rows.forEach(row => {
+        const inputs = row.querySelectorAll("input.score");
+        if (inputs.length === 2) {
+          const homeInput = inputs[0];
+          const awayInput = inputs[1];
+          const homeTeam = homeInput.dataset.home;
+          const awayTeam = awayInput.dataset.home;
+
+          const homeGoals = parseInt(homeInput.value);
+          const awayGoals = parseInt(awayInput.value);
+
+          if (!isNaN(homeGoals) && !isNaN(awayGoals)) {
+            const home = table[homeTeam];
+            const away = table[awayTeam];
+
+            home.P++; away.P++;
+            home.GF += homeGoals; home.GA += awayGoals;
+            away.GF += awayGoals; away.GA += homeGoals;
+
+            if (homeGoals > awayGoals) {
+              home.W++; away.L++;
+              home.PTS += 3;
+            } else if (homeGoals < awayGoals) {
+              away.W++; home.L++;
+              away.PTS += 3;
+            } else {
+              home.D++; away.D++;
+              home.PTS += 1; away.PTS += 1;
+            }
+          }
+        }
+      });
+
+      teams.forEach(team => {
+        const t = table[team];
+        t.GD = t.GF - t.GA;
+      });
+
+      const sorted = Object.values(table).sort((a, b) => b.PTS - a.PTS || b.GD - a.GD);
+      const standingsBody = document.getElementById("standings");
+      standingsBody.innerHTML = "";
+
+      sorted.forEach(t => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${t.team}</td><td>${t.P}</td><td>${t.W}</td><td>${t.D}</td>
+          <td>${t.L}</td><td>${t.GF}</td><td>${t.GA}</td><td>${t.GD}</td><td>${t.PTS}</td>
+        `;
+        standingsBody.appendChild(tr);
+      });
+    }
+  </script></body>
+</html>
